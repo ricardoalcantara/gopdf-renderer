@@ -21,6 +21,9 @@ type Rect struct {
 	Size     Size
 }
 
+var PageSizeA4 = Size{Width: 595, Height: 842}
+var PageSizeA4Landscape = Size{Width: 842, Height: 595}
+
 var RED = Color{R: 255, G: 0, B: 0}
 var GREEN = Color{R: 0, G: 255, B: 0}
 var BLUE = Color{R: 0, G: 0, B: 255}

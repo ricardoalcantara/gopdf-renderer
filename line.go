@@ -9,17 +9,17 @@ type Line struct {
 	area     Rect
 	bgColor  *Color
 
-	justifyContent Alignment
-	alignItems     Alignment
+	xAlignment Alignment
+	yAlignment Alignment
 }
 
-func (p *Line) JustifyContent(alignment Alignment) *Line {
-	p.justifyContent = alignment
+func (p *Line) XAlignment(alignment Alignment) *Line {
+	p.xAlignment = alignment
 	return p
 }
 
-func (p *Line) AlignItems(alignment Alignment) *Line {
-	p.alignItems = alignment
+func (p *Line) YAlignment(alignment Alignment) *Line {
+	p.yAlignment = alignment
 	return p
 }
 
@@ -62,8 +62,10 @@ func (p *Line) Image(path string) *Image {
 }
 
 func (l *Line) Draw(pdf *gopdf.GoPdf) {
+	maxWidth := 0.0
 	for _, element := range l.elements {
 		size := element.Measure(pdf)
+		maxWidth += size.Width
 		if size.Height > l.area.Size.Height {
 			l.area.Size.Height = size.Height
 		}
@@ -75,12 +77,38 @@ func (l *Line) Draw(pdf *gopdf.GoPdf) {
 	}
 
 	position := l.area.Position
-	for _, element := range l.elements {
-		pdf.SetXY(position.X, position.Y)
-		size := element.Draw(pdf)
-		if size.Height > l.area.Size.Height {
-			l.area.Size.Height = size.Height
+	elementsCount := len(l.elements)
+	switch l.xAlignment {
+	case Start:
+		for _, element := range l.elements {
+			pdf.SetXY(position.X, position.Y)
+			size := element.Draw(pdf)
+			if size.Height > l.area.Size.Height {
+				l.area.Size.Height = size.Height
+			}
+			position.X += size.Width
 		}
-		position.X += size.Width
+	case SpaceEven:
+		gap := (l.area.Size.Width - maxWidth) / float64(elementsCount)
+		for _, element := range l.elements {
+			size := element.Measure(pdf)
+			pdf.SetXY(position.X+gap-size.Width/5, position.Y+(l.area.Size.Height/2)-(size.Height/2))
+			element.Draw(pdf)
+			position.X += size.Width
+		}
+	case SpaceBetween:
+		for idx, element := range l.elements {
+			size := element.Measure(pdf)
+			if idx == 0 {
+				pdf.SetXY(position.X, position.Y)
+			} else if idx == elementsCount-1 {
+				pdf.SetXY(l.area.Size.Width-size.Width, position.Y)
+			}
+			element.Draw(pdf)
+			if size.Height > l.area.Size.Height {
+				l.area.Size.Height = size.Height
+			}
+			position.X += size.Width
+		}
 	}
 }

@@ -6,7 +6,7 @@ type PdfRenderer struct {
 	header   *Page
 	footer   *Page
 	pages    []*Page
-	pageSize gopdf.Rect
+	pageSize Size
 }
 
 func NewPdfRenderer() *PdfRenderer {
@@ -17,7 +17,7 @@ func (p *PdfRenderer) LoadFont(name string, path string) *PdfRenderer {
 	return p
 }
 
-func (p *PdfRenderer) PageSize(pageSize gopdf.Rect) *PdfRenderer {
+func (p *PdfRenderer) PageSize(pageSize Size) *PdfRenderer {
 	p.pageSize = pageSize
 	return p
 }
@@ -52,7 +52,7 @@ func (p *PdfRenderer) Page() *Page {
 
 func (p *PdfRenderer) Render(path string) error {
 	pdf := gopdf.GoPdf{}
-	pdf.Start(gopdf.Config{PageSize: p.pageSize})
+	pdf.Start(gopdf.Config{PageSize: gopdf.Rect{W: p.pageSize.Width, H: p.pageSize.Height}})
 
 	var height float64
 	if p.header != nil {

@@ -4,14 +4,14 @@ import "github.com/signintech/gopdf"
 
 type Page struct {
 	lines        []*Line
-	pageSize     gopdf.Rect
+	pageSize     Size
 	marginTop    float64
 	marginBottom float64
 	marginLeft   float64
 	marginRight  float64
 }
 
-func (p *Page) PageSize(pageSize gopdf.Rect) *Page {
+func (p *Page) PageSize(pageSize Size) *Page {
 	p.pageSize = pageSize
 	return p
 }
@@ -56,7 +56,7 @@ func (p *Page) Line(config func(line *Line)) *Line {
 	line := &Line{
 		area: Rect{
 			Position: Vec2{X: p.marginLeft, Y: p.marginTop},
-			Size:     Size{Width: p.pageSize.W - p.marginLeft - p.marginRight, Height: 0}},
+			Size:     Size{Width: p.pageSize.Width - p.marginLeft - p.marginRight, Height: 0}},
 	}
 
 	if config != nil {
