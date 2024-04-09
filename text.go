@@ -3,15 +3,28 @@ package pdfrenderer
 import "github.com/signintech/gopdf"
 
 type Text struct {
-	text  string
-	size  float64
-	color Color
-	// Area  Rect
+	text     string
+	fontSize float64
+	color    Color
+	size     Size
+	position Vec2
 }
 
-func (t *Text) Size(size float64) *Text {
-	t.size = size
+func (t *Text) Position(position Vec2) {
+	t.position = position
+}
+
+func (t *Text) GetPosition() Vec2 {
+	return t.position
+}
+
+func (t *Text) FontSize(fontSize float64) *Text {
+	t.fontSize = fontSize
 	return t
+}
+
+func (t *Text) GetSize() Size {
+	return t.size
 }
 
 func (t *Text) Color(color Color) *Text {
@@ -20,7 +33,7 @@ func (t *Text) Color(color Color) *Text {
 }
 
 func (t *Text) Measure(pdf *gopdf.GoPdf) Size {
-	pdf.SetFontSize(t.size)
+	pdf.SetFontSize(t.fontSize)
 	width, err := pdf.MeasureTextWidth(t.text)
 	if err != nil {
 		panic(err)
@@ -30,23 +43,21 @@ func (t *Text) Measure(pdf *gopdf.GoPdf) Size {
 		panic(err)
 	}
 
-	return Size{
+	t.size = Size{
 		Width:  width,
 		Height: height,
 	}
+
+	return t.size
 }
 
-func (t Text) Draw(pdf *gopdf.GoPdf) Size {
+func (t Text) Draw(pdf *gopdf.GoPdf) {
 	pdf.SetFillColor(t.color.R, t.color.G, t.color.B)
-	pdf.SetFontSize(t.size)
-
-	size := t.Measure(pdf)
-	pdf.SetY(pdf.GetY() + size.Height - 2.5)
+	pdf.SetFontSize(t.fontSize)
+	pdf.SetXY(t.position.X, t.position.Y+t.size.Height-2.5)
 
 	err := pdf.Text(t.text)
 	if err != nil {
 		panic(err)
 	}
-
-	return size
 }

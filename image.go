@@ -5,8 +5,17 @@ import (
 )
 
 type Image struct {
-	size Size
-	path string
+	size     Size
+	path     string
+	position Vec2
+}
+
+func (i *Image) Position(position Vec2) {
+	i.position = position
+}
+
+func (i *Image) GetPosition() Vec2 {
+	return i.position
 }
 
 func (i *Image) Size(width float64, height float64) *Image {
@@ -15,6 +24,10 @@ func (i *Image) Size(width float64, height float64) *Image {
 		Height: height,
 	}
 	return i
+}
+
+func (i *Image) GetSize() Size {
+	return i.size
 }
 
 func (i *Image) Measure(pdf *gopdf.GoPdf) Size {
@@ -30,31 +43,20 @@ func (i *Image) Measure(pdf *gopdf.GoPdf) Size {
 		panic(err)
 	}
 
-	var size Size
 	if i.size.Width == 0 || i.size.Height == 0 {
 		rect := imgobj.GetRect()
 
-		size.Width = rect.H
-		size.Height = rect.W
+		i.size.Width = rect.H
+		i.size.Height = rect.W
 	}
 
-	return size
+	return i.size
 }
 
-func (i *Image) Draw(pdf *gopdf.GoPdf) Size {
-	var pdfSize *gopdf.Rect
-	var size Size
-	if i.size.Width > 0 && i.size.Height > 0 {
-		size = i.size
-	} else {
-		size = i.Measure(pdf)
-	}
-	pdfSize = &gopdf.Rect{W: size.Width, H: size.Height}
-
-	err := pdf.Image(i.path, pdf.GetX(), pdf.GetY(), pdfSize)
+func (i *Image) Draw(pdf *gopdf.GoPdf) {
+	pdfSize := &gopdf.Rect{W: i.size.Width, H: i.size.Height}
+	err := pdf.Image(i.path, i.position.X, i.position.Y, pdfSize)
 	if err != nil {
 		panic(err)
 	}
-
-	return size
 }

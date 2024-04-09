@@ -11,6 +11,8 @@ type Line struct {
 
 	xAlignment Alignment
 	yAlignment Alignment
+
+	gap float64
 }
 
 func (p *Line) XAlignment(alignment Alignment) *Line {
@@ -61,54 +63,116 @@ func (p *Line) Image(path string) *Image {
 	return img
 }
 
-func (l *Line) Draw(pdf *gopdf.GoPdf) {
-	maxWidth := 0.0
+func (p *Line) Table() *Table {
+	table := &Table{}
+	p.elements = append(p.elements, table)
+	return table
+}
+
+func (l *Line) UpdateMeasure(pdf *gopdf.GoPdf) {
 	for _, element := range l.elements {
 		size := element.Measure(pdf)
-		maxWidth += size.Width
 		if size.Height > l.area.Size.Height {
 			l.area.Size.Height = size.Height
 		}
 	}
+}
 
-	if l.bgColor != nil {
-		pdf.SetFillColor(l.bgColor.R, l.bgColor.G, l.bgColor.B)
-		pdf.Rectangle(l.area.Position.X, l.area.Position.Y, l.area.Position.X+l.area.Size.Width, l.area.Position.Y+l.area.Size.Height, "F", 0, 0)
-	}
+func (l *Line) Update(pdf *gopdf.GoPdf) {
+	l.UpdateMeasure(pdf)
 
+	// Calculate x width
+	totalElements := len(l.elements)
 	position := l.area.Position
-	elementsCount := len(l.elements)
 	switch l.xAlignment {
 	case Start:
 		for _, element := range l.elements {
-			pdf.SetXY(position.X, position.Y)
-			size := element.Draw(pdf)
-			if size.Height > l.area.Size.Height {
-				l.area.Size.Height = size.Height
-			}
-			position.X += size.Width
+			element.Position(Vec2{X: position.X, Y: position.Y})
+			size := element.GetSize()
+			position.X += size.Width + l.gap
 		}
-	case SpaceEven:
-		gap := (l.area.Size.Width - maxWidth) / float64(elementsCount)
+	case End:
+		position.X = l.area.Position.X + l.area.Size.Width
+		for i := totalElements - 1; i >= 0; i-- {
+			element := l.elements[i]
+			size := element.GetSize()
+			position.X -= (size.Width + l.gap)
+			element.Position(Vec2{X: position.X, Y: position.Y})
+		}
+	case Center:
+		width := l.area.Size.Width / 2
+		elementsSize := 0.0
 		for _, element := range l.elements {
-			size := element.Measure(pdf)
-			pdf.SetXY(position.X+gap-size.Width/5, position.Y+(l.area.Size.Height/2)-(size.Height/2))
-			element.Draw(pdf)
-			position.X += size.Width
+			elementsSize += element.GetSize().Width
+		}
+		position.X += width - (elementsSize / 2)
+		for _, element := range l.elements {
+			element.Position(Vec2{X: position.X, Y: position.Y})
+			size := element.GetSize()
+			position.X += size.Width + l.gap
 		}
 	case SpaceBetween:
+		space := l.area.Size.Width / (float64(totalElements) + 1)
 		for idx, element := range l.elements {
-			size := element.Measure(pdf)
+			size := element.GetSize()
 			if idx == 0 {
-				pdf.SetXY(position.X, position.Y)
-			} else if idx == elementsCount-1 {
-				pdf.SetXY(l.area.Size.Width-size.Width, position.Y)
+				element.Position(Vec2{X: position.X, Y: position.Y})
+			} else if idx == totalElements-1 {
+				element.Position(Vec2{X: l.area.Size.Width - size.Width, Y: position.Y})
+			} else {
+				// TODO: I am not sure if this space / 2 is correct and it's not even tested
+				position.X -= (size.Width / 2)
+				element.Position(Vec2{X: position.X, Y: position.Y})
 			}
-			element.Draw(pdf)
-			if size.Height > l.area.Size.Height {
-				l.area.Size.Height = size.Height
-			}
-			position.X += size.Width
+			position.X += size.Width + (space / 2)
 		}
+	case SpaceEven:
+		space := l.area.Size.Width / (float64(totalElements) + 1)
+		position.X += space
+		for _, element := range l.elements {
+			size := element.GetSize()
+			position.X -= (size.Width / 2)
+			element.Position(Vec2{X: position.X, Y: position.Y})
+			// TODO: I am not sure if this space / 2 is correct
+			position.X += size.Width + (space / 2)
+		}
+	}
+
+	// Calculate y height
+	switch l.yAlignment {
+	case Start:
+		break
+	case End:
+		height := l.area.Size.Height
+		for _, element := range l.elements {
+			size := element.GetSize()
+			element.Position(Vec2{X: element.GetPosition().X, Y: position.Y + height - size.Height})
+		}
+	case Center:
+		centerHeight := l.area.Size.Height / 2
+		for _, element := range l.elements {
+			size := element.GetSize()
+			element.Position(Vec2{X: element.GetPosition().X, Y: position.Y + centerHeight - (size.Height / 2)})
+		}
+	case SpaceBetween:
+		break
+	case SpaceEven:
+		break
+	}
+}
+
+func (l *Line) Draw(pdf *gopdf.GoPdf) {
+	if l.bgColor != nil {
+		pdf.SetFillColor(l.bgColor.R, l.bgColor.G, l.bgColor.B)
+		pdf.Rectangle(
+			l.area.Position.X,
+			l.area.Position.Y,
+			l.area.Position.X+l.area.Size.Width,
+			l.area.Position.Y+l.area.Size.Height,
+			"F", 0, 0)
+	}
+
+	for _, element := range l.elements {
+		element.Draw(pdf)
 	}
 }

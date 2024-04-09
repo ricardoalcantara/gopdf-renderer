@@ -63,7 +63,8 @@ func (p *PdfRenderer) Render(path string) error {
 
 	if p.footer != nil {
 		pdf.AddFooter(func() {
-			p.footer.Draw(&pdf)
+			pdf.SetY(825)
+			p.footer.DrawReverse(&pdf)
 		})
 	}
 

@@ -67,12 +67,31 @@ func (p *Page) Line(config func(line *Line)) *Line {
 	return line
 }
 
+func (p *Page) BreakLine(y float64) {
+	p.Line(nil).Size(0, y)
+}
+
 func (p *Page) Draw(pdf *gopdf.GoPdf) float64 {
 	lineHeight := p.marginTop
 	for _, line := range p.lines {
 		line.area.Position.Y = lineHeight
+		line.Update(pdf)
 		line.Draw(pdf)
 		lineHeight += line.area.Size.Height
+	}
+
+	return lineHeight
+}
+
+func (p *Page) DrawReverse(pdf *gopdf.GoPdf) float64 {
+	lineHeight := p.pageSize.Height - p.marginBottom
+	for i := len(p.lines) - 1; i >= 0; i-- {
+		line := p.lines[i]
+		line.UpdateMeasure(pdf)
+		lineHeight -= line.area.Size.Height
+		line.area.Position.Y = lineHeight
+		line.Update(pdf)
+		line.Draw(pdf)
 	}
 
 	return lineHeight
