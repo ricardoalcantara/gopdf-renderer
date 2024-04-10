@@ -9,6 +9,7 @@ type Text struct {
 	size        Size
 	position    Vec2
 	borderColor *Color
+	paddingLeft float64
 }
 
 func (t *Text) Position(position Vec2) {
@@ -66,7 +67,7 @@ func (t Text) Draw(pdf *gopdf.GoPdf) {
 
 	pdf.SetFillColor(t.color.R, t.color.G, t.color.B)
 	pdf.SetFontSize(t.fontSize)
-	pdf.SetXY(t.position.X, t.position.Y+t.size.Height-2.5)
+	pdf.SetXY(t.position.X+t.paddingLeft, t.position.Y+t.size.Height-2.5)
 
 	err := pdf.Text(t.text)
 	if err != nil {

@@ -37,6 +37,7 @@ func (t *Table) AddRow(row []string) *Table {
 			fontSize:    12,
 			color:       BLACK,
 			borderColor: &BLACK,
+			paddingLeft: 2.5,
 		}
 	}
 
@@ -59,7 +60,7 @@ func (t *Table) Measure(pdf *gopdf.GoPdf) Size {
 			cell := &row[idx]
 			size := cell.Measure(pdf)
 			if size.Height > cellHeight {
-				cellHeight = size.Height 
+				cellHeight = size.Height
 			}
 			cell.size.Width = cellWidth
 		}
