@@ -3,11 +3,12 @@ package pdfrenderer
 import "github.com/signintech/gopdf"
 
 type Text struct {
-	text     string
-	fontSize float64
-	color    Color
-	size     Size
-	position Vec2
+	text        string
+	fontSize    float64
+	color       Color
+	size        Size
+	position    Vec2
+	borderColor *Color
 }
 
 func (t *Text) Position(position Vec2) {
@@ -52,6 +53,17 @@ func (t *Text) Measure(pdf *gopdf.GoPdf) Size {
 }
 
 func (t Text) Draw(pdf *gopdf.GoPdf) {
+	if t.borderColor != nil {
+		pdf.SetFillColor(t.borderColor.R, t.borderColor.G, t.borderColor.B)
+		pdf.SetLineWidth(1.0)
+		pdf.Rectangle(
+			t.position.X,
+			t.position.Y,
+			t.position.X+t.size.Width,
+			t.position.Y+t.size.Height,
+			"D", 0, 0)
+	}
+
 	pdf.SetFillColor(t.color.R, t.color.G, t.color.B)
 	pdf.SetFontSize(t.fontSize)
 	pdf.SetXY(t.position.X, t.position.Y+t.size.Height-2.5)

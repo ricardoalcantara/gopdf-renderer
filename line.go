@@ -42,8 +42,12 @@ func (p *Line) Position(x float64, y float64) *Line {
 	return p
 }
 
-func (p *Line) GetArea() Rect {
-	return p.area
+func (p *Line) GetSize() Size {
+	return p.area.Size
+}
+
+func (p *Line) GetPosition() Vec2 {
+	return p.area.Position
 }
 
 func (p *Line) Text(value string) *Text {
@@ -64,17 +68,28 @@ func (p *Line) Image(path string) *Image {
 }
 
 func (p *Line) Table() *Table {
-	table := &Table{}
+	table := &Table{
+		size: Size{
+			Width:  p.area.Size.Width,
+			Height: p.area.Size.Height,
+		},
+	}
 	p.elements = append(p.elements, table)
 	return table
 }
 
 func (l *Line) UpdateMeasure(pdf *gopdf.GoPdf) {
+	totalWidth := 0.0
 	for _, element := range l.elements {
+		element.Position(Vec2{
+			X: l.area.Position.X + totalWidth,
+			Y: l.area.Position.Y,
+		})
 		size := element.Measure(pdf)
 		if size.Height > l.area.Size.Height {
 			l.area.Size.Height = size.Height
 		}
+		totalWidth += size.Width
 	}
 }
 
