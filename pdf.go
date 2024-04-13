@@ -1,6 +1,8 @@
 package pdfrenderer
 
-import "github.com/signintech/gopdf"
+import (
+	"github.com/signintech/gopdf"
+)
 
 type PdfRenderer struct {
 	header   *Page
@@ -51,6 +53,24 @@ func (p *PdfRenderer) Page() *Page {
 }
 
 func (p *PdfRenderer) Render(path string) error {
+	pdf, err := p.build()
+	if err != nil {
+		return err
+	}
+	return pdf.WritePdf(path)
+}
+
+func (p *PdfRenderer) RenderBytes() ([]byte, error) {
+	pdf, err := p.build()
+	if err != nil {
+		return nil, err
+	}
+	stream := MemoryStream{}
+	pdf.WriteTo(&stream)
+	return stream.Bytes(), nil
+}
+
+func (p *PdfRenderer) build() (*gopdf.GoPdf, error) {
 	pdf := gopdf.GoPdf{}
 	pdf.Start(gopdf.Config{PageSize: gopdf.Rect{W: p.pageSize.Width, H: p.pageSize.Height}})
 
@@ -71,11 +91,11 @@ func (p *PdfRenderer) Render(path string) error {
 	err := pdf.AddTTFFont("DejaVuSans", "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf")
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 	err = pdf.SetFont("DejaVuSans", "", 12)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	for _, page := range p.pages {
@@ -85,5 +105,5 @@ func (p *PdfRenderer) Render(path string) error {
 		pp.Draw(&pdf)
 	}
 
-	return pdf.WritePdf(path)
+	return &pdf, nil
 }

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"io/ioutil"
+
 	pdfrenderer "github.com/ricardoalcantara/gopdf-renderer"
 	"github.com/rs/zerolog/log"
 )
@@ -119,5 +121,14 @@ func main() {
 
 	if err != nil {
 		log.Fatal().Err(err).Send()
+	}
+
+	b, err := pdf.RenderBytes()
+	if err != nil {
+		log.Fatal().Err(err).Send()
+	}
+	err = ioutil.WriteFile("invoice2.pdf", b, 0644)
+	if err != nil {
+		panic(err)
 	}
 }
