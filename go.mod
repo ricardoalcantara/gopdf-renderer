@@ -1,6 +1,6 @@
 module github.com/ricardoalcantara/gopdf-renderer
 
-go 1.22.0
+go 1.20
 
 require (
 	github.com/rs/zerolog v1.32.0
