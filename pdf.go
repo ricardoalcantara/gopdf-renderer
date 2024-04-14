@@ -5,17 +5,25 @@ import (
 )
 
 type PdfRenderer struct {
-	header   *Page
-	footer   *Page
-	pages    []*Page
-	pageSize Size
+	header      *Page
+	footer      *Page
+	pages       []*Page
+	pageSize    Size
+	fonts       map[string]string
+	defaultFont string
 }
 
 func NewPdfRenderer() *PdfRenderer {
-	return &PdfRenderer{}
+	return &PdfRenderer{
+		fonts: make(map[string]string),
+	}
 }
 
 func (p *PdfRenderer) LoadFont(name string, path string) *PdfRenderer {
+	if p.defaultFont == "" {
+		p.defaultFont = name
+	}
+	p.fonts[name] = path
 	return p
 }
 
@@ -71,6 +79,7 @@ func (p *PdfRenderer) RenderBytes() ([]byte, error) {
 }
 
 func (p *PdfRenderer) build() (*gopdf.GoPdf, error) {
+	// BUG: if you build twice the values will be overwritten
 	pdf := gopdf.GoPdf{}
 	pdf.Start(gopdf.Config{PageSize: gopdf.Rect{W: p.pageSize.Width, H: p.pageSize.Height}})
 
@@ -88,12 +97,13 @@ func (p *PdfRenderer) build() (*gopdf.GoPdf, error) {
 		})
 	}
 
-	err := pdf.AddTTFFont("DejaVuSans", "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf")
-
-	if err != nil {
-		return nil, err
+	for k, v := range p.fonts {
+		err := pdf.AddTTFFont(k, v)
+		if err != nil {
+			return nil, err
+		}
 	}
-	err = pdf.SetFont("DejaVuSans", "", 12)
+	err := pdf.SetFont(p.defaultFont, "", 0)
 	if err != nil {
 		return nil, err
 	}
